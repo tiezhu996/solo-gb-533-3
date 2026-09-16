@@ -73,7 +73,7 @@ func OpenDatabase(cfg Config) (*gorm.DB, error) {
 	if cfg.DBAutoMigrate {
 		if err := db.AutoMigrate(
 			&model.User{}, &model.RobotCell{}, &model.SafetyZone{}, &model.MotionProgram{},
-			&model.ValidationRun{}, &model.AuditEvent{},
+			&model.ValidationRun{}, &model.AuditEvent{}, &model.StopMarginLedger{}, &model.StopMarginCurrent{},
 		); err != nil {
 			return nil, fmt.Errorf("migrate database: %w", err)
 		}

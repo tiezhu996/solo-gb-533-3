@@ -20,6 +20,7 @@ type handlers struct {
 	zones       *handler.SafetyZoneHandler
 	programs    *handler.MotionProgramHandler
 	validations *handler.ValidationRunHandler
+	stopMargins *handler.StopMarginLedgerHandler
 	auth        *service.SystemService
 }
 
@@ -38,6 +39,7 @@ func New(db *gorm.DB, cfg config.Config) *gin.Engine {
 	registerSafetyZoneRoutes(protected, wired.zones)
 	registerMotionProgramRoutes(protected, wired.programs)
 	registerValidationRunRoutes(protected, wired.validations)
+	registerStopMarginLedgerRoutes(protected, wired.stopMargins)
 	protected.GET("/audit", middleware.RBAC(constants.RoleAuditor, constants.RoleReviewer, constants.RoleAdmin), wired.system.Audit)
 	engine.NoRoute(func(context *gin.Context) {
 		context.JSON(http.StatusNotFound, gin.H{"error": gin.H{"code": "route_not_found", "message": "route was not found"}, "request_id": context.GetString("request_id")})
@@ -56,9 +58,12 @@ func wire(db *gorm.DB, cfg config.Config) handlers {
 	zoneService := service.NewSafetyZoneService(zoneRepository, cellRepository, systemService)
 	programService := service.NewMotionProgramService(db, programRepository, cellRepository, systemService)
 	validationService := service.NewValidationRunService(db, validationRepository, programRepository, zoneRepository, systemService, cfg.AlgorithmVersion)
+	stopMarginRepository := repository.NewStopMarginLedgerRepository(db)
+	stopMarginService := service.NewStopMarginLedgerService(db, stopMarginRepository, programRepository, systemService)
 	return handlers{
 		system: handler.NewSystemHandler(systemService, db), cells: handler.NewRobotCellHandler(cellService),
 		zones: handler.NewSafetyZoneHandler(zoneService), programs: handler.NewMotionProgramHandler(programService),
-		validations: handler.NewValidationRunHandler(validationService), auth: systemService,
+		validations: handler.NewValidationRunHandler(validationService), stopMargins: handler.NewStopMarginLedgerHandler(stopMarginService),
+		auth: systemService,
 	}
 }
